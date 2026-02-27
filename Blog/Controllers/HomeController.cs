@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Blog.Attributes;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
 
 namespace Blog.Controllers
 {
@@ -14,6 +10,7 @@ namespace Blog.Controllers
         [HttpGet("")]
         public IActionResult Get()
         {
+
             return Ok("Ok");
         }
     }

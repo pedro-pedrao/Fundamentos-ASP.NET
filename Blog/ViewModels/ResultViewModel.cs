@@ -7,9 +7,9 @@ namespace Blog.ViewModels
 {
     public class ResultViewModel<T>
     {
-        public ResultViewModel(T Data, List<String> errors)
+        public ResultViewModel(T data, List<String> errors)
         {
-            Data = Data;
+            Data = data;
             Errors = errors;
         }
 
