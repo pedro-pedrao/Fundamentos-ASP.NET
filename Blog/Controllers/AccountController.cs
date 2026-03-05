@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Blog.Data;
 using Blog.Extensions;
 using Blog.Models;
@@ -21,7 +22,7 @@ namespace Blog.Controllers
         // }
 
         [HttpPost("v1/accounts/")]
-        public async Task<IActionResult> Post([FromBody] RegisterViewModel model, [FromServices] BlogDataContext context)
+        public async Task<IActionResult> Post([FromBody] RegisterViewModel model, [FromServices] EmailService emailService, [FromServices] BlogDataContext context)
         {
             if (!ModelState.IsValid)
             {
@@ -43,6 +44,7 @@ namespace Blog.Controllers
             {
                 await context.Users.AddAsync(user);
                 await context.SaveChangesAsync();
+                emailService.Send(user.Name, user.Email, "Bem vindo!", $"Sua senha é <strong>{password}</strong>");
 
                 return Ok(
                     new ResultViewModel<dynamic>(new
@@ -53,7 +55,7 @@ namespace Blog.Controllers
                 );
             }
             catch (DbUpdateException)
-            {   
+            {
                 return StatusCode(500, new ResultViewModel<string>("05XE99 - Este email já está cadastrado"));
             }
             catch (Exception)
@@ -98,9 +100,50 @@ namespace Blog.Controllers
             {
                 return StatusCode(500, new ResultViewModel<Category>("05XE4 - Falha interna no servidor"));
             }
+        }
 
+        [Authorize]
+        [HttpPost("v1/accounts/upload-image")]
+        public async Task<IActionResult> UploadImage(
+            [FromBody] UploadImageViewModel model,
+            [FromServices] BlogDataContext context
+        )
+        {
+            var fileName = $"{Guid.NewGuid().ToString()}.jpg";
+            var data = new Regex(@"data:imageV[a-z]+;base64,").Replace(model.Base64Image, "");
+            var bytes = Convert.FromBase64String(data);
+
+            try
+            {
+                await System.IO.File.WriteAllBytesAsync($"wwwroot/images/{fileName}", bytes);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new ResultViewModel<string>("05X04 - Falha servidor"));
+            }
+
+            var user = await context.Users.FirstOrDefaultAsync(x => x.email == user.Identity.Name);
+
+            if (user == null)
+            {
+                return NotFound(new ResultViewModel<User>("Usuário não encontrado"));
+            }
+
+            user.image = $"https://localhost:0000/images/{fileName}";
+
+            try
+            {
+                context.Users.Update(user);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new ResultViewModel<string>("05X04 - Falha servidor"));
+            }
+            return Ok(new ResultViewModel<string>("Imagem alterada com sucesso!"));
 
         }
+
 
         /*
                 // [Authorize(Roles = "user")]
